@@ -8,27 +8,13 @@ import { IcosahedronGeometry, Vector3 } from 'three'
 export default function Experience() {
     const [matcapTexture] = useMatcapTexture('7B5254_E9DCC7_B19986_C8AC91', 256)
     const [material, setMaterial] = useState()
-    const instanceCount = 50
+    const instanceCount = 25
 
 
-    const icosohedron = useRef()
+    const icosohedrons = useRef()
     const cubes = useRef()
     const balls = useRef()
     const pyramids = useRef()
-
-
-
-
-
-
-
-    useFrame((state) => {
-        if (icosohedron.current && icosohedron.current.translation().y < -30) {
-            icosohedron.current.setTranslation(new Vector3(0, 10, 0))
-            icosohedron.current.setLinvel(new Vector3(0, 0, 0))
-            icosohedron.current.setAngvel(new Vector3(0, 0, 0))
-        }
-    });
 
     useFrame(() => {
         if (balls.current) {
@@ -72,12 +58,26 @@ export default function Experience() {
         }
     });
 
+    useFrame(() => {
+        if (icosohedrons.current) {
+            for (let i = 0; i < instanceCount; i++) {
+                const specificIcosohedron = icosohedrons.current.at(i); // Access the first cube
+                if (specificIcosohedron && specificIcosohedron.translation().y < -30) {
+                    //console.log(specificBall.translation());
+                    specificIcosohedron.setTranslation(new Vector3(((Math.random() - 0.5) * 5), 10 + i * 0.10, (Math.random() * 2.5) - 0.55))
+                    specificIcosohedron.setLinvel(new Vector3(0, 0, 0))
+                    specificIcosohedron.setAngvel(new Vector3(0, 0, 0))
+                }
+            }
+        }
+    });
+
 
     const cubeInstances = useMemo(() => {
         const cubeInstances = []
 
         for (let i = 0; i < instanceCount; i++) {
-            const randomScale = Math.random() * 0.3 + 0.1;
+            const randomScale = Math.random() * 0.3 + 0.2;
             cubeInstances.push({
                 key: 'cubeInstance_' + i, //used by react
                 position: [
@@ -97,7 +97,7 @@ export default function Experience() {
         const sphereInstances = []
 
         for (let i = 0; i < instanceCount; i++) {
-            const randomScale = Math.random() * 0.1 + 0.1;
+            const randomScale = Math.random() * 0.3;
             sphereInstances.push({
                 key: 'sphereInstance_' + i, //used by react
                 position: [
@@ -117,7 +117,7 @@ export default function Experience() {
         const pyramidInstances = []
 
         for (let i = 0; i < instanceCount; i++) {
-            const randomScale = Math.random() * 0.5 + 0.1;
+            const randomScale = Math.random() * 0.3 + 0.2;
             pyramidInstances.push({
                 key: 'pyramidInstance_' + i, //used by react
                 position: [
@@ -133,15 +133,33 @@ export default function Experience() {
         return pyramidInstances
     }, [])
 
+    const icosohedronInstances = useMemo(() => {
+        const icosohedronInstances = []
 
+        for (let i = 0; i < instanceCount; i++) {
+            const randomScale = Math.random() * 0.4 + 0.5;
+            icosohedronInstances.push({
+                key: 'pyramidInstance_' + i, //used by react
+                position: [
+                    ((Math.random() - 0.5) * 4),
+                    10 + i * 0.10,
+                    (Math.random() * 1.75) - 0.5
+                ],
+                rotation: [Math.random(), Math.random(), Math.random()],
+                scale: randomScale,
+            })
+        }
+
+        return icosohedronInstances
+    }, [])
 
 
 
     return <>
 
-        <Perf position="top-left" />
+        {/* <Perf position="top-left" /> */}
 
-        <OrbitControls makeDefault />
+        {/* <OrbitControls makeDefault /> */}
 
         <directionalLight castShadow position={[1, 2, 3]} intensity={4.5} />
         <ambientLight intensity={1.5} />
@@ -162,8 +180,6 @@ export default function Experience() {
                 instances={cubeInstances}
                 restitution={0.9}
                 ref={cubes}
-                
-                // type='fixed'
             >
                 <instancedMesh frustumCulled={false} args={[null, null, instanceCount]} >
                     <boxGeometry />
@@ -177,7 +193,6 @@ export default function Experience() {
                 restitution={0.9}
                 colliders="ball"
                 ref={balls}
-                // type='fixed'
             >
                 <instancedMesh frustumCulled={false} args={[null, null, instanceCount]} >
                     <sphereGeometry />
@@ -191,7 +206,6 @@ export default function Experience() {
                 restitution={0.9}
                 colliders="hull"
                 ref={pyramids}
-                // type='fixed'
             >
                 <instancedMesh frustumCulled={false} args={[null, null, instanceCount]} >
                     <coneGeometry args={[0.6, 1.0, 4]} />
@@ -199,31 +213,27 @@ export default function Experience() {
                 </instancedMesh>
             </InstancedRigidBodies>
 
+            {/*--------------START ICOSOHEDRONS--------------*/}
+            <InstancedRigidBodies
+                instances={icosohedronInstances}
+                restitution={0.9}
+                colliders="hull"
+                ref={icosohedrons}
+                // type='fixed'
+            >
+                <instancedMesh frustumCulled={false} args={[null, null, instanceCount]} >
+                    <icosahedronGeometry args={[0.4, 0]} />
+                    <meshStandardMaterial color="purple" />
+                </instancedMesh>
+            </InstancedRigidBodies>
 
             {/*START ENCLOSURE*/}
             <RigidBody type='fixed'>
-                <CuboidCollider args={[4, 30, 0.5]} position={[0, -15, -2]} />
-                <CuboidCollider args={[4, 30, 0.5]} position={[0, -15, 3]} />
-                <CuboidCollider args={[0.5, 30, 2]} position={[4, -15, 0.5]} />
-                <CuboidCollider args={[0.5, 30, 2]} position={[-4, -15, 0.5]} />
+                <CuboidCollider args={[10, 15, 0.5]} position={[0, 0, -2]} rotation={[-0.1,0,0]}/>
+                <CuboidCollider args={[10, 15, 0.5]} position={[0, 0, 3]} />
+                <CuboidCollider args={[0.5, 15, 3.75]} position={[7, 0, -0.25]} rotation={[0,0,-0.2]}/>
+                <CuboidCollider args={[0.5, 15, 3.75]} position={[-7, 0, -0.25]} rotation={[0,0,0.2]}/>
             </RigidBody>
-            {/*START FLOOR*/}
-            <RigidBody type='fixed' restitution={0}>
-                <mesh receiveShadow position-y={- 33}>
-                    <boxGeometry args={[7, 2, 4]} />
-                    <meshStandardMaterial color="black" />
-                </mesh>
-            </RigidBody>
-
-            <RigidBody ref={icosohedron} restitution={0.9} colliders="hull">
-                <mesh position={[3, 8, 1]}>
-                    <icosahedronGeometry args={[0.2, 0]}/>
-                    <meshStandardMaterial color="green" />
-                </mesh>
-            </RigidBody>
-
-
-
 
 
             {/*////////////////////START NAME//////////////////////*/}
@@ -346,7 +356,7 @@ export default function Experience() {
                     LETA
                 </Text3D>
             </RigidBody>
-            <RigidBody type='fixed' colliders="hull">
+            <RigidBody type='fixed' colliders="hull" >
                 <Text3D
                     material={material}
                     font="./fonts/helvetiker_regular.typeface.json"
@@ -360,7 +370,24 @@ export default function Experience() {
                     bevelSegments={5}
                     position={[-3.5, -21, -0.2]}
                 >
-                    CONTACT ME
+                    CONTACT
+                </Text3D>
+            </RigidBody>
+            <RigidBody type='fixed' colliders="hull">
+                <Text3D
+                    material={material}
+                    font="./fonts/helvetiker_regular.typeface.json"
+                    size={0.75}
+                    height={2}
+                    curveSegments={12}
+                    bevelEnabled
+                    bevelThickness={0.02}
+                    bevelSize={0.02}
+                    bevelOffset={0}
+                    bevelSegments={5}
+                    position={[2, -21, -0.2]}
+                >
+                    ME
                 </Text3D>
             </RigidBody>
         </Physics>
